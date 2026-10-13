@@ -1,0 +1,36 @@
+services:
+  samagriseva-mysql:
+    image: mysql:8.4
+    container_name: samagriseva-mysql
+    restart: unless-stopped
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: Mathura@1985
+      MYSQL_DATABASE: samagriseva
+      MYSQL_USER: samagriseva
+      MYSQL_PASSWORD: Dumra@1985   # must equal spring.datasource.password in application-prod.properties
+    ports:
+      - "3307:3306"            # kept open for SQLyog
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    container_name: samagriseva-backend
+    restart: unless-stopped
+    depends_on:
+      samagriseva-mysql:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - /var/www/samagriseva:/app/frontend:ro   # needed for the SEO pages
+
+volumes:
+  mysql_data:
+    name: samagriseva_mysql_data
